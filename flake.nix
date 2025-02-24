@@ -17,7 +17,7 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation rec {
           pname = "notion-app-electron";
-          version = "4.3.0";
+          version = "4.5.0";
 
           _bettersqlite3ver = "11.8.1";
           _bufferutilver    = "4.0.8";
@@ -25,7 +25,7 @@
 
           notionExe = pkgs.fetchurl {
             url = "https://desktop-release.notion-static.com/Notion%20Setup%20${version}.exe";
-            sha256 = "99c8bdb4f28c4a45861fcc818012739ac5385d5147b19cf17f2e095dd222cf99";
+            sha256 = "decc67442d306d2e680bc47aea37588b1f19ab02f3c0fa8f6c00d5580bc92f45";
           };
 
           betterSqlite3 = pkgs.fetchurl {
