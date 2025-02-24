@@ -20,7 +20,6 @@
           version = "4.5.0";
 
           _bettersqlite3ver = "11.8.1";
-          _bufferutilver    = "4.0.8";
           _elecronver       = "132";
 
           notionExe = pkgs.fetchurl {
@@ -31,11 +30,6 @@
           betterSqlite3 = pkgs.fetchurl {
             url = "https://github.com/WiseLibs/better-sqlite3/releases/download/v${_bettersqlite3ver}/better-sqlite3-v${_bettersqlite3ver}-electron-v${_elecronver}-linux-x64.tar.gz";
             sha256 = "b79098043fb352c28306d13ec51906f8465f5d176619a40aa75dda0bdffb4542";
-          };
-
-          bufferutil = pkgs.fetchurl {
-            url = "https://github.com/websockets/bufferutil/releases/download/v${_bufferutilver}/v${_bufferutilver}-linux-x64.tar";
-            sha256 = "eac6fabcfa38e21c33763cb0e5efc1aa30c333cf9cc39f680fb8d12c88fefc93";
           };
 
           nativeBuildInputs = [
@@ -68,10 +62,6 @@
 
             # (Adjust the following path if the tarball structure is different)
             cp tmp-bs/build/Release/better_sqlite3.node resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/
-
-            # Unpack bufferutil tar and move its binary into place.
-            mkdir -p tmp-bu && tar -xf ${bufferutil} -C tmp-bu
-            cp tmp-bu/linux-x64/node.napi.node resources/app.asar.unpacked/node_modules/bufferutil/build/Release/bufferutil.node
 
             # Add tray icon
             cp ${notionAur}/notion.png asar_patched/.webpack/main/trayIcon.png
