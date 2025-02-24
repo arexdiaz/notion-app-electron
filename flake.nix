@@ -1,0 +1,130 @@
+{
+  description = "Notion App Electron (version 4.3.0) based on mateushonorato/notion-app-electron-aur";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    notionAur = {
+      url = "github:mateushonorato/notion-app-electron-aur?rev=8e24cc590cec0338a88040b24e1c184aa3cefc15";
+      flake = false;
+    };
+  };
+
+  outputs = { self, nixpkgs, flake-utils, notionAur }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+      in {
+        packages.default = pkgs.stdenv.mkDerivation rec {
+          pname = "notion-app-electron";
+          version = "4.3.0";
+
+          _bettersqlite3ver = "11.8.1";
+          _bufferutilver    = "4.0.8";
+          _elecronver       = "132";
+
+          notionExe = pkgs.fetchurl {
+            url = "https://desktop-release.notion-static.com/Notion%20Setup%20${version}.exe";
+            sha256 = "99c8bdb4f28c4a45861fcc818012739ac5385d5147b19cf17f2e095dd222cf99";
+          };
+
+          betterSqlite3 = pkgs.fetchurl {
+            url = "https://github.com/WiseLibs/better-sqlite3/releases/download/v${_bettersqlite3ver}/better-sqlite3-v${_bettersqlite3ver}-electron-v${_elecronver}-linux-x64.tar.gz";
+            sha256 = "b79098043fb352c28306d13ec51906f8465f5d176619a40aa75dda0bdffb4542";
+          };
+
+          bufferutil = pkgs.fetchurl {
+            url = "https://github.com/websockets/bufferutil/releases/download/v${_bufferutilver}/v${_bufferutilver}-linux-x64.tar";
+            sha256 = "eac6fabcfa38e21c33763cb0e5efc1aa30c333cf9cc39f680fb8d12c88fefc93";
+          };
+
+          nativeBuildInputs = [
+            pkgs.p7zip
+            pkgs.asar
+            pkgs.makeWrapper
+          ];
+
+          buildInputs = [
+            pkgs.electron_34
+            pkgs.gcc-unwrapped
+            pkgs.libglvnd
+          ];
+
+          unpackPhase = "true";
+
+          configurePhase = ''
+            # Create a temporary plugin directory
+            mkdir -p "$PWD/pluginDir"
+
+            # Extract the embedded 7z archive from the Notion Setup exe:
+            7z x "${notionExe}" "\$PLUGINSDIR/app-64.7z" -y -bse0 -bso0
+            7z x "./\$PLUGINSDIR/app-64.7z" "resources/app.asar" "resources/app.asar.unpacked" -y -bse0 -bso0
+
+            # Extract the ASAR contents into a directory for patching
+            asar e resources/app.asar asar_patched
+
+            # Unpack better-sqlite3 tarball and move its binary into place.
+            mkdir -p tmp-bs && tar -xf ${betterSqlite3} -C tmp-bs
+
+            # (Adjust the following path if the tarball structure is different)
+            cp tmp-bs/build/Release/better_sqlite3.node resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/
+
+            # Unpack bufferutil tar and move its binary into place.
+            mkdir -p tmp-bu && tar -xf ${bufferutil} -C tmp-bu
+            cp tmp-bu/linux-x64/node.napi.node resources/app.asar.unpacked/node_modules/bufferutil/build/Release/bufferutil.node
+
+            # Add tray icon
+            cp ${notionAur}/notion.png asar_patched/.webpack/main/trayIcon.png
+
+            # Apply sed patches to fix tray icon behavior, fake the user agent, disable auto updates,
+            # avoid duplicated instances and use the Windows tray menu:
+            sed -i 's|this.tray.on("click",(()=>{this.onClick()}))|this.tray.setContextMenu(this.trayMenu),this.tray.on("click",(()=>{this.onClick()}))|g' asar_patched/.webpack/main/index.js
+            sed -i 's|getIcon(){[^}]*}|getIcon(){return require("path").resolve(__dirname, "trayIcon.png");}|g' asar_patched/.webpack/main/index.js
+            sed -i 's|e.setUserAgent(`''${e.getUserAgent()} WantsServiceWorker`),|e.setUserAgent(`''${e.getUserAgent().replace("Linux", "Windows")} WantsServiceWorker`),|g' asar_patched/.webpack/main/index.js
+            sed -i 's|if("darwin"===process.platform){const e=l.systemPreferences?.getUserDefault(C,"boolean"),t=_.Store.getState().app.preferences?.isAutoUpdaterDisabled,r=_.Store.getState().app.preferences?.isAutoUpdaterOSSupportBypass,n=(0,v.isOsUnsupportedForAutoUpdates)();return Boolean(e\|\|t\|\|!r&&n)}return!1|return!0|g' asar_patched/.webpack/main/index.js
+            sed -i 's|handleOpenUrl);else if("win32"===process.platform)|handleOpenUrl);else if("linux"===process.platform)|g' asar_patched/.webpack/main/index.js
+            sed -i 's|async function(){await(0,m.setupObservability)(),|o.app.requestSingleInstanceLock() ? async function(){await(0,m.setupObservability)(),|g' asar_patched/.webpack/main/index.js
+            sed -i 's|setupAboutPanel)()}()}()|setupAboutPanel)()}()}() : o.app.quit();|g' asar_patched/.webpack/main/index.js
+            sed -i 's|r="win32"===process.platform?function(e,t)|r="linux"===process.platform?function(e,t)|g' asar_patched/.webpack/main/index.js
+
+            # Repack the patched ASAR archive (unpacking *.node files)
+            asar p asar_patched app.asar --unpack "*.node"
+          '';
+
+          installPhase = ''
+            runHook preInstall
+
+            mkdir -p $out/usr/lib/notion-app
+            cp app.asar $out/usr/lib/notion-app/
+            cp -r resources/app.asar.unpacked $out/usr/lib/notion-app/
+
+            mkdir -p $out/bin
+
+            install -Dm755 ${notionAur}/notion-app $out/bin/notion-app
+            substituteInPlace $out/bin/notion-app \
+              --replace "/usr/lib/notion-app/app.asar" "$out/usr/lib/notion-app/app.asar" \
+              --replace "electron33" "${pkgs.electron_34}/bin/electron"
+
+            sed -i '/# Launch/a export LD_LIBRARY_PATH="${pkgs.gcc-unwrapped.lib}/lib:${pkgs.libglvnd}/lib:\$LD_LIBRARY_PATH"' $out/bin/notion-app
+            sed -i '/# Launch/a export PATH="${pkgs.lib.makeBinPath [ pkgs.gcc-unwrapped ]}:\$PATH"' $out/bin/notion-app
+
+            mkdir -p $out/usr/share/applications
+            install -Dm644 ${notionAur}/notion.desktop $out/share/applications/notion.desktop
+
+            mkdir -p $out/usr/share/icons/hicolor/256x256/apps
+            install -Dm644 ${notionAur}/notion.png $out/usr/share/icons/hicolor/256x256/apps/notion.png
+            runHook postInstall
+          '';
+          
+
+          meta = with pkgs.lib; {
+            description = "Notion App Electron – Your connected workspace for wiki, docs & projects";
+            homepage = "https://www.notion.so/desktop";
+            license = {
+              url = "https://www.notion.so/desktop";
+            };
+            platforms = [ "x86_64-linux" ];
+          };
+        };
+      });
+}
