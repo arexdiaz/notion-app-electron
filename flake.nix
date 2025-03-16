@@ -87,9 +87,9 @@
             mkdir -p $out/usr/lib/notion-app
             cp app.asar $out/usr/lib/notion-app/
             cp -r resources/app.asar.unpacked $out/usr/lib/notion-app/
+            cp -r asar_patched/package.json $out/usr/lib/notion-app/
 
             mkdir -p $out/bin
-
             install -Dm755 ${notionAur}/notion-app $out/bin/notion-app
             substituteInPlace $out/bin/notion-app \
               --replace "/usr/lib/notion-app/app.asar" "$out/usr/lib/notion-app/app.asar" \
