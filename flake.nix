@@ -94,9 +94,10 @@
             substituteInPlace $out/bin/notion-app \
               --replace "/usr/lib/notion-app/app.asar" "$out/usr/lib/notion-app/app.asar" \
               --replace "electron33" "${pkgs.electron_34}/bin/electron"
-
+              
             sed -i '/# Launch/a export LD_LIBRARY_PATH="${pkgs.gcc-unwrapped.lib}/lib:${pkgs.libglvnd}/lib:\$LD_LIBRARY_PATH"' $out/bin/notion-app
             sed -i '/# Launch/a export PATH="${pkgs.lib.makeBinPath [ pkgs.gcc-unwrapped ]}:\$PATH"' $out/bin/notion-app
+            sed -i "/# Launch/a cd $out/usr/lib/notion-app/" $out/bin/notion-app
 
             mkdir -p $out/usr/share/applications
             install -Dm644 ${notionAur}/notion.desktop $out/share/applications/notion.desktop
