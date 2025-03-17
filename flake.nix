@@ -68,6 +68,7 @@
 
             # Apply sed patches to fix tray icon behavior, fake the user agent, disable auto updates,
             # avoid duplicated instances and use the Windows tray menu:
+            sed -i "s|process\.cwd(),\"package\.json\"|\"$out/usr/lib/notion-app/\",\"package.json\"|g" asar_patched/.webpack/main/index.js
             sed -i 's|this.tray.on("click",(()=>{this.onClick()}))|this.tray.setContextMenu(this.trayMenu),this.tray.on("click",(()=>{this.onClick()}))|g' asar_patched/.webpack/main/index.js
             sed -i 's|getIcon(){[^}]*}|getIcon(){return require("path").resolve(__dirname, "trayIcon.png");}|g' asar_patched/.webpack/main/index.js
             sed -i 's|e.setUserAgent(`''${e.getUserAgent()} WantsServiceWorker`),|e.setUserAgent(`''${e.getUserAgent().replace("Linux", "Windows")} WantsServiceWorker`),|g' asar_patched/.webpack/main/index.js
