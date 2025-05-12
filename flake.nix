@@ -91,7 +91,7 @@
           install -Dm755 ${notionAur}/notion-app $out/bin/notion-app
           substituteInPlace $out/bin/notion-app \
             --replace "/usr/lib/notion-app/app.asar" "$out/usr/lib/notion-app/app.asar" \
-            --replace "electron33" "${pkgsArg.electron_31}/bin/electron"
+            --replace "electron33" "${pkgsArg.electron_34}/bin/electron"
             
           wrapProgram $out/bin/notion-app \
             --prefix LD_LIBRARY_PATH : "${pkgsArg.lib.makeLibraryPath [ pkgsArg.gcc-unwrapped.lib pkgsArg.libglvnd ]}" \
