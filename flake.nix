@@ -37,7 +37,7 @@
         ];
 
         buildInputs = [
-          pkgsArg.electron_31 # Changed from electron_34 to match ABI 132
+          pkgsArg.electron_34
           pkgsArg.gcc-unwrapped
           pkgsArg.libglvnd
         ];
