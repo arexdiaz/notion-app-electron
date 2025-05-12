@@ -12,13 +12,12 @@
 
   outputs = { self, nixpkgs, flake-utils, notionAur, ... }@inputs:
     let
-      # Reusable function to create the notion-app-electron package
       mkNotionPackage = pkgsArg: pkgsArg.stdenv.mkDerivation rec {
         pname = "notion-app-electron";
         version = "4.5.0";
 
         _bettersqlite3ver = "11.8.1";
-        _elecronver       = "132"; # Corresponds to Electron ABI 132 (Electron 31.x)
+        _elecronver       = "132";
 
         notionExe = pkgsArg.fetchurl {
           url = "https://desktop-release.notion-static.com/Notion%20Setup%20${version}.exe";
@@ -111,28 +110,23 @@
         meta = with pkgsArg.lib; {
           description = "Notion App Electron – Your connected workspace for wiki, docs & projects";
           homepage = "https://www.notion.so/desktop";
-          license = licenses.unfree; # Assuming proprietary, adjust if needed
-          platforms = [ "x86_64-linux" ]; # Due to prebuilt better-sqlite3
+          license = licenses.unfree;
+          platforms = [ "x86_64-linux" ];
         };
       };
     in
-    # Standard packages output using flake-utils
     (flake-utils.lib.eachDefaultSystem (system:
       let
-        # Use a pristine pkgs for building the package via packages.<system>.default
         pkgs = import nixpkgs { inherit system; };
       in {
         packages.default = mkNotionPackage pkgs;
       }
-    )) // { # Extend with top-level outputs
-      # Overlay to provide `notion-app-electron` in pkgs
+    )) // {
       overlays.default = final: prev: {
-        notion-app-electron = mkNotionPackage final; # Use 'final' pkgs from the overlay context
+        notion-app-electron = mkNotionPackage final;
       };
 
-      # NixOS module to apply the overlay
-      # This is what you'll import as `inputs.notion-app-electron.package.default`
-      package.default = { ... }: { # NixOS module arguments (config, pkgs, lib, etc.)
+      package.default = { ... }: {
         nixpkgs.overlays = [ self.overlays.default ];
       };
     };
