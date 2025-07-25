@@ -36,7 +36,7 @@
         ];
 
         buildInputs = [
-          pkgsArg.electron_34
+          pkgsArg.electron_36
           pkgsArg.gcc-unwrapped
           pkgsArg.libglvnd
         ];
