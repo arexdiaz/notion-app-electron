@@ -132,6 +132,7 @@
           notionPackage = mkNotionPackage pinnedPkgs;
         in {
           nixpkgs.overlays = [ (final: prev: { notion-app-electron = notionPackage; }) ];
+          nixpkgs.config.allowUnfree = true;
         };
     };
 }
