@@ -128,11 +128,13 @@
 
       package.default = { config, pkgs, inputs, lib, ... }:
         let
-          pinnedPkgs = nixpkgs.legacyPackages.${pkgs.system};
+          pinnedPkgs = import nixpkgs {
+            system = pkgs.system;
+            config = { allowUnfree = true; };
+          };
           notionPackage = mkNotionPackage pinnedPkgs;
         in {
           nixpkgs.overlays = [ (final: prev: { notion-app-electron = notionPackage; }) ];
-          nixpkgs.config.allowUnfree = true;
         };
     };
 }
