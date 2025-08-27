@@ -126,8 +126,12 @@
         notion-app-electron = mkNotionPackage final;
       };
 
-      package.default = { ... }: {
-        nixpkgs.overlays = [ self.overlays.default ];
-      };
+      package.default = { config, pkgs, inputs, lib, ... }:
+        let
+          pinnedPkgs = nixpkgs.legacyPackages.${pkgs.system};
+          notionPackage = mkNotionPackage pinnedPkgs;
+        in {
+          nixpkgs.overlays = [ (final: prev: { notion-app-electron = notionPackage; }) ];
+        };
     };
 }
