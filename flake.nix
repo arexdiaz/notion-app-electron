@@ -1,8 +1,8 @@
 {
-  description = "Notion App Electron (version 4.5.0) based on mateushonorato/notion-app-electron-aur";
+  description = "Notion App Electron (version 4.18.1) based on mateushonorato/notion-app-electron-aur";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/0196c0175e9191c474c26ab5548db27ef5d34b05";
     flake-utils.url = "github:numtide/flake-utils";
     notionAur = {
       url = "github:mateushonorato/notion-app-electron-aur?rev=8e24cc590cec0338a88040b24e1c184aa3cefc15";
@@ -14,14 +14,14 @@
     let
       mkNotionPackage = pkgsArg: pkgsArg.stdenv.mkDerivation rec {
         pname = "notion-app-electron";
-        version = "4.5.0";
+        version = "4.18.1";
 
         _bettersqlite3ver = "11.8.1";
         _elecronver       = "132";
 
         notionExe = pkgsArg.fetchurl {
           url = "https://desktop-release.notion-static.com/Notion%20Setup%20${version}.exe";
-          sha256 = "decc67442d306d2e680bc47aea37588b1f19ab02f3c0fa8f6c00d5580bc92f45";
+          sha256 = "sha256-eRb/8BNaty7Ct6NiEE9P1MjvInF+D7GzdTe2TYMHiMA=";
         };
 
         betterSqlite3 = pkgsArg.fetchurl {
